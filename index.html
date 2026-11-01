@@ -1,0 +1,612 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Parian Atelier</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..900&family=Instrument+Serif:ital@0;1&display=swap">
+<style>
+/* Layout: one marble head on a fixed stage behind the whole page. It turns, comes close and steps aside as each
+   section arrives: the word PARIAN, the statement, three practices, the stone library, then lamplight at the end. */
+:root {
+  --fog: #d6d3cd;
+  --fog-hi: #ebe9e4;
+  --ink: #111110;
+  --ink-soft: #4b4945;
+  --line: rgba(17,17,16,.16);
+  --chalk: #f4f2ee;
+  --display: "Archivo", "Helvetica Neue", Arial, sans-serif;
+  --serif: "Instrument Serif", "Times New Roman", serif;
+  color-scheme: light;
+}
+* { box-sizing: border-box }
+html { background: var(--fog) }
+body { background: var(--fog); color: var(--ink); font-family: var(--display); font-stretch: 100%; -webkit-font-smoothing: antialiased; overflow-x: hidden }
+a { color: inherit; text-decoration: none }
+a:focus-visible { outline: 2px solid var(--ink); outline-offset: 3px }
+.gutter { padding-left: max(28px, env(safe-area-inset-left, 0px)); padding-right: max(28px, env(safe-area-inset-right, 0px)) }
+.cap { font-size: 12px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; line-height: 1.45 }
+.muted { color: var(--ink-soft) }
+#stage { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 4; pointer-events: none; opacity: 0; transition: opacity 1.6s ease }
+.stage-ready #stage { opacity: 1 }
+.over { position: relative; z-index: 2 }
+body::after { content: ""; position: fixed; inset: 0; z-index: 3; pointer-events: none; opacity: .35; mix-blend-mode: multiply; background-image: var(--grain) }
+
+.hero { position: relative; height: 100vh; height: 100svh; min-height: 640px;
+  background: radial-gradient(60% 45% at 50% 38%, var(--fog-hi) 0%, transparent 70%), radial-gradient(40% 30% at 15% 80%, rgba(255,255,255,.35), transparent 70%), var(--fog) }
+.top { position: fixed; z-index: 5; left: 0; right: 0; top: 0; display: grid; grid-template-columns: 1.3fr 1fr 1fr 1fr auto; gap: 24px; padding-block: max(26px, env(safe-area-inset-top, 0px)) 0; transition: color .8s }
+.top nav { display: grid; align-content: start }
+.top nav a:hover { opacity: .55 }
+.is-dark .top { color: var(--chalk) } .is-dark .top .muted { color: #a19d95 }
+.dot { display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: currentColor; margin: 0 6px 1px; vertical-align: middle }
+.top > div:first-child .muted { white-space: nowrap }
+.cta { display: inline-flex; gap: 8px; align-items: start }
+.cta svg { width: 12px; height: 12px; margin-top: 2px }
+.word-wrap { position: absolute; z-index: 0; left: 0; right: 0; top: 14% }
+.word { display: inline-block; white-space: nowrap; font-weight: 800; font-stretch: 112%; letter-spacing: -.035em; line-height: .8; margin: 0 }
+.blurb { position: absolute; z-index: 2; left: 0; bottom: 40px }
+.cue { position: absolute; z-index: 2; right: 0; bottom: 40px; text-align: right }
+.loading { position: fixed; z-index: 6; left: 50%; top: 58%; transform: translateX(-50%); transition: opacity .6s }
+.stage-ready .loading { opacity: 0 }
+
+.scene { position: relative; min-height: 120vh; min-height: 120svh; display: flex; align-items: center; padding-block: 12vh }
+.scene.right { justify-content: flex-end }
+.col { width: min(520px, 100%); display: grid; gap: 16px }
+.statement p { margin: 0; font-family: var(--serif); font-size: clamp(30px, 3.8vw, 58px); line-height: 1.04; text-wrap: balance }
+.statement em { font-style: italic; color: var(--ink-soft) }
+.practice h3 { margin: 0; font-size: clamp(34px, 4.4vw, 64px); font-weight: 800; font-stretch: 112%; letter-spacing: -.035em; line-height: .9 }
+.practice p { margin: 0; font-size: 16px; line-height: 1.6; color: var(--ink-soft); max-width: 40ch }
+.num { font-family: var(--serif); font-style: italic; font-size: 22px }
+
+.library { padding-block: 70vh 140px }
+.library h2 { font-family: var(--serif); font-weight: 400; font-size: clamp(34px, 4vw, 60px); margin: 0 0 28px }
+.tbl { overflow-x: auto; background: color-mix(in srgb, var(--fog-hi) 70%, transparent); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); padding: 8px 18px 4px }
+table { width: 100%; border-collapse: collapse; font-size: 14px; min-width: 620px; font-variant-numeric: tabular-nums }
+th { text-align: left; font-weight: 600; font-size: 11px; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-soft); padding: 12px 12px 12px 0; border-bottom: 1px solid var(--ink) }
+td { padding: 16px 12px 16px 0; border-bottom: 1px solid var(--line); vertical-align: top }
+td:first-child { font-weight: 700; font-size: 16px }
+
+footer { position: relative; min-height: 150vh; min-height: 150svh; padding-block: 0 48px; display: flex; flex-direction: column; justify-content: flex-end; gap: 64px }
+footer .big { font-family: var(--serif); font-size: clamp(40px, 7vw, 110px); line-height: .95; margin: 0; max-width: 11ch }
+footer .big i { color: var(--ink-soft) }
+footer .row { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 24px; color: var(--ink-soft) }
+footer .row span { color: var(--ink) }
+
+/* the awakening: a coda after the contact page. It looks like more of the same until it reaches the top of the
+   screen, then the room goes dark at once, the eyes open and the stone lights up from inside */
+:root { --gold: #e7b75a; --void: #050407 }
+html, body { transition: background-color .18s ease }
+.awake { position: relative; min-height: 230vh; min-height: 230svh }
+.coda { position: relative; min-height: 140vh; min-height: 140svh; display: flex; align-items: flex-end; justify-content: center; padding-block: 0 14vh; text-align: center }
+html.woke, html.woke body { background-color: var(--void) }
+html.woke .top { color: var(--gold) } html.woke .top .muted { color: #9a7a3c }
+.greek { position: sticky; top: 0; height: 100vh; height: 100svh; display: flex; align-items: center; pointer-events: none; opacity: 0; transition: opacity .25s }
+.greek span { display: block; width: 100%; text-align: center; white-space: nowrap; font-family: var(--serif); color: var(--gold); letter-spacing: .02em; line-height: .8; text-shadow: 0 0 28px rgba(231,183,90,.55), 0 0 90px rgba(231,183,90,.3); transform: scale(.94); transition: transform 3s cubic-bezier(.2,.7,.2,1) }
+html.woke .greek { opacity: 1 } html.woke .greek span { transform: none }
+.omen { position: absolute; left: 0; right: 0; bottom: 18vh; margin: 0; font-family: var(--serif); font-style: italic; font-size: clamp(26px, 3vw, 44px); color: var(--gold); text-align: center; opacity: 0; transition: opacity 1.4s .6s }
+html.woke .omen { opacity: 1 }
+.coda p { margin: 0; color: #9a7a3c; opacity: 0; transition: opacity 1s }
+html.woke .coda p { opacity: 1 }
+.flash { position: fixed; inset: 0; z-index: 5; pointer-events: none; opacity: 0; background: radial-gradient(40% 35% at 50% 42%, rgba(255,246,222,1), rgba(255,214,140,.55) 45%, rgba(255,200,120,0) 80%) }
+.snd { all: unset; cursor: pointer; position: fixed; z-index: 6; left: max(16px, env(safe-area-inset-left, 0px)); bottom: max(16px, env(safe-area-inset-bottom, 0px)); padding: 7px 11px; border: 1px solid currentColor; font-size: 11px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-soft); transition: color .4s }
+html.woke .snd { color: var(--gold) }
+.snd:focus-visible { outline: 2px solid var(--gold); outline-offset: 3px }
+
+.rv-on .rv { transform: translateY(28px); opacity: .35; transition: transform 1.1s cubic-bezier(.2,.7,.2,1), opacity 1.1s }
+.rv-on .rv.in { transform: none; opacity: 1 }
+
+@media (max-width: 900px) { .top { grid-template-columns: 1fr auto } .top nav, .top > div:nth-child(2) { display: none } }
+@media (max-width: 700px) {
+  .gutter { padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)) }
+  .word-wrap { top: 22% }
+  .blurb { bottom: 24px } .cue { display: none }
+  .scene { align-items: flex-end; padding-block: 50vh 28px } .scene.right { justify-content: flex-start }
+  .col { padding: 18px; background: color-mix(in srgb, var(--fog-hi) 78%, transparent); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px) }
+}
+@media (prefers-reduced-motion: reduce) { .rv-on .rv { transform: none; opacity: 1 } }
+</style>
+</head>
+<body style="margin:0">
+
+
+<canvas id="stage" role="img" aria-label="A carved marble head that turns as the page scrolls"></canvas>
+<div class="loading cap muted" id="load">Quarrying 0%</div>
+
+<div class="top gutter cap">
+  <div>Parian Atelier<br><span class="muted"><span id="clock">—</span>, EET<span class="dot"></span>Athens</span></div>
+  <div class="muted">Est. 1987<br>Stone · Bronze · Plaster</div>
+  <nav><a href="#practice">Practice</a><a href="#library">Stone library</a><a href="#contact" class="muted">Archive (soon)</a></nav>
+  <nav><a href="#restore">Restoration</a><a href="#contact">Commissions</a></nav>
+  <a class="cta" href="#contact">Book a studio visit <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M2 10 10 2M4 2h6v6"/></svg></a>
+</div>
+
+<section class="hero" data-pose='{"at":"center","yaw":-22,"pitch":3,"dist":1.85,"fov":30,"sx":0,"sy":-0.1,"env":1,"drift":1,"shadow":0.35,"lights":0,"spin":0,"tx":0,"ty":0,"tz":0,"roll":0}' data-pose-m='{"dist":2.6,"sy":-0.05}'>
+  <div class="word-wrap gutter"><h1 class="word" id="word">PARIAN</h1></div>
+  <div class="blurb gutter cap">Parian Atelier,<br>stone carving &amp; sculptural<br>restoration in Athens, GR</div>
+  <div class="cue gutter cap muted">Scroll, and the<br>head turns ↓</div>
+</section>
+
+<section class="scene statement gutter" data-pose='{"at":"face","yaw":-78,"pitch":1,"dist":1.6,"sx":0.27,"sy":-0.02}' data-pose-m='{"dist":1.5,"sx":0,"sy":0.2}'>
+  <div class="col over rv"><span class="cap muted">The stone</span><p>We carve portrait heads, reliefs and architectural fragments from <em>Lychnites marble</em>, the translucent stone the island of Paros has given sculptors for two and a half thousand years.</p></div>
+</section>
+
+<section class="scene practice right gutter" id="practice" data-pose='{"at":"face","yaw":-20,"pitch":-2,"dist":1.05,"sx":-0.25,"sy":0}' data-pose-m='{"dist":1.5,"sx":0,"sy":0.2}'>
+  <div class="col over rv"><span class="num">i.</span><span class="cap muted">Commission</span><h3>Portrait in stone</h3><p>From a live sitting or a 3D scan to a finished head in eleven to sixteen weeks. Roughed by pointing machine, finished by hand with rasp, rifflers and pumice.</p></div>
+</section>
+
+<section class="scene practice gutter" id="restore" data-pose='{"at":"face","yaw":62,"pitch":6,"dist":1.25,"sx":0.26,"sy":0.0}' data-pose-m='{"dist":1.8,"sx":0,"sy":0.2}'>
+  <div class="col over rv"><span class="num">ii.</span><span class="cap muted">Restoration</span><h3>Conservation work</h3><p>Consolidation, crack injection and losses replaced in matched stone, documented to museum standard. Recent work for private collections in Geneva and Naxos.</p></div>
+</section>
+
+<section class="scene practice right gutter" data-pose='{"at":"center","yaw":150,"pitch":24,"dist":1.8,"sx":-0.24,"sy":0}' data-pose-m='{"dist":2.2,"sx":0,"sy":0.18}'>
+  <div class="col over rv"><span class="num">iii.</span><span class="cap muted">Casting</span><h3>Plaster &amp; bronze</h3><p>Silicone moulds taken from finished stone, cast in alabaster plaster or lost-wax bronze in editions of up to eight, each signed and numbered.</p></div>
+</section>
+
+<section class="library gutter" id="library" data-pose='{"at":"center","yaw":-8,"pitch":4,"dist":3.0,"sx":0.3,"sy":0.2}' data-pose-m='{"dist":3.4,"sx":0.18,"sy":0.3}' data-anchor="0.4">
+  <h2 class="over rv">Stone library</h2>
+  <div class="tbl over rv"><table>
+    <thead><tr><th>Stone</th><th>Quarry</th><th>Density</th><th>Grain</th><th>Light depth</th><th>Best for</th></tr></thead>
+    <tbody>
+      <tr><td>Lychnites</td><td>Marathi, Paros</td><td>2.72 g/cm³</td><td>1–3 mm</td><td>up to 35 mm</td><td>Faces, skin, hands</td></tr>
+      <tr><td>Pentelic</td><td>Dionysos, Attica</td><td>2.71 g/cm³</td><td>0.5–1.5 mm</td><td>up to 15 mm</td><td>Reliefs, drapery</td></tr>
+      <tr><td>Thassos</td><td>Saliara, Thassos</td><td>2.86 g/cm³</td><td>2–5 mm</td><td>up to 25 mm</td><td>Large torsos</td></tr>
+      <tr><td>Statuario</td><td>Carrara, Tuscany</td><td>2.70 g/cm³</td><td>0.2–0.6 mm</td><td>up to 10 mm</td><td>Fine detail, lettering</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<footer class="gutter" id="contact" data-pose='{"at":"face","yaw":-34,"pitch":2,"dist":1.4,"sx":0.22,"sy":0.08,"env":1}' data-pose-m='{"dist":1.9,"sx":0,"sy":0.24}' data-anchor="0.45">
+  <p class="big over rv">Sit for a portrait,<br><i>or bring us the broken one.</i></p>
+  <div class="row cap over"><div>Studio<br><span>14 Lysikratous, Plaka, Athens</span></div><div>Write<br><span>studio@parian-atelier.gr</span></div><div>Visits<br><span>Tue–Sat, 10:00–17:00</span></div><div>Head scan: Lee Perry-Smith, CC BY 3.0</div><div>© Parian Atelier</div></div>
+</footer>
+
+<section class="awake" id="awake" data-pose='{"at":"face","yaw":0,"pitch":1,"dist":1.75,"sx":0,"sy":-0.02,"env":1,"drift":0.25}' data-pose-m='{"dist":2.6,"sy":0.04}' data-anchor="0.22">
+  <div class="greek" aria-hidden="true"><span id="greek">ΑΝΑΣΤΑΣΙΣ</span></div>
+  <p class="omen">It was only ever sleeping.</p>
+</section>
+<section class="coda gutter" data-pose='{"at":"face","yaw":0,"pitch":-3,"dist":1.35,"sx":0,"sy":-0.04,"env":1,"drift":0.15}' data-pose-m='{"dist":2.0,"sy":0.08}' data-anchor="0.5">
+  <p class="cap">Parian Atelier · Athens · the stone remembers</p>
+</section>
+<div class="flash" id="flash" aria-hidden="true"></div>
+<button class="snd" id="snd" aria-pressed="false">Sound: off</button>
+
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.169.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.169.0/examples/jsm/"}}</script>
+<script type="module">
+// Scroll stage: one 3D model on a fixed, transparent canvas behind the whole page.
+// Every element with data-pose='{...}' is a stop; as the page scrolls the camera glides from stop to stop
+// (orbit yaw/pitch/distance round an anchor, lens, and a screen shift that moves the model left/right/up/down),
+// holding while a stop's content is centred and easing between stops. Damped, with a slow idle drift and pointer parallax.
+import * as THREE from 'three';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
+import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
+
+// Bloom that keeps a transparent canvas transparent: the stock blur writes alpha 1 everywhere, which would turn
+// the page behind the model black, so its alpha follows the glow's own brightness instead.
+function makeBloom(renderer, scene, camera, o = {}) {
+  const composer = new EffectComposer(renderer);
+  composer.setPixelRatio(renderer.getPixelRatio());
+  composer.addPass(new RenderPass(scene, camera));
+  // a mirror-sharp highlight can overflow the half-float buffer; one bad pixel then spreads through the blur as a
+  // black block, so overflow and NaN are cleaned before the bloom
+  composer.addPass(new ShaderPass({ uniforms: { tDiffuse: { value: null } },
+    vertexShader: 'varying vec2 vUv; void main() { vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }',
+    fragmentShader: 'uniform sampler2D tDiffuse; varying vec2 vUv; void main() { vec4 c = texture2D(tDiffuse, vUv); if (any(isnan(c)) || any(isinf(c))) c = vec4(0.0); c.rgb = min(c.rgb, vec3(40.0)); c.a = clamp(c.a, 0.0, 1.0); gl_FragColor = c; }' }));
+  const bloom = new UnrealBloomPass(new THREE.Vector2(512, 512), o.strength ?? 0.55, o.radius ?? 0.55, o.threshold ?? 1.0);
+  for (const m of bloom.separableBlurMaterials) {
+    m.fragmentShader = m.fragmentShader.replace('gl_FragColor = vec4(diffuseSum/weightSum, 1.0);',
+      'vec3 cc = diffuseSum / weightSum; gl_FragColor = vec4(cc, clamp(max(cc.r, max(cc.g, cc.b)), 0.0, 1.0));');
+    m.needsUpdate = true;
+  }
+  composer.addPass(bloom);
+  composer.addPass(new OutputPass());
+  return { composer, bloom };
+}
+
+const DEG = Math.PI / 180;
+const POSE_KEYS = ['yaw', 'pitch', 'dist', 'fov', 'tx', 'ty', 'tz', 'sx', 'sy', 'roll', 'lights', 'spin', 'env', 'drift', 'shadow'];
+const BASE_POSE = { at: 'center', yaw: 30, pitch: 8, dist: 2.4, fov: 30, tx: 0, ty: 0, tz: 0, sx: 0, sy: 0, roll: 0, lights: 0, spin: 0, env: 1, drift: 1, shadow: 1 };
+
+// A car-photography studio for reflections: a dim cyclorama, one long overhead softbox, two side strips, a rim light
+// behind and a pale floor, so dark paint shows crisp highlight lines instead of a washed-out room.
+function studioRoom(o = {}) {
+  const k = Object.assign({ walls: 0.16, floor: 0.32, top: 7, strips: 4.5, rim: 3 }, typeof o === 'object' ? o : {});
+  const room = new THREE.Scene();
+  const box = new THREE.Mesh(new THREE.BoxGeometry(14, 8, 14), new THREE.MeshBasicMaterial({ side: THREE.BackSide }));
+  box.material.color.setScalar(k.walls); box.position.y = 3.6; room.add(box);
+  const glow = (w, h, v, pos, look) => {
+    const m = new THREE.Mesh(new THREE.PlaneGeometry(w, h), new THREE.MeshBasicMaterial({ side: THREE.DoubleSide }));
+    m.material.color.setScalar(v); m.position.set(...pos); m.lookAt(...look); room.add(m); return m;
+  };
+  glow(14, 14, k.floor, [0, -0.39, 0], [0, 10, 0]);
+  glow(7, 2.4, k.top, [0, 5.2, 0], [0, 0, 0]);
+  glow(0.35, 5, k.strips, [-4.2, 2.2, 0], [0, 1.4, 0]).rotation.z += 0;
+  glow(0.35, 5, k.strips, [4.2, 2.2, 0], [0, 1.4, 0]);
+  glow(4, 1.2, k.rim, [0, 2.4, -6.5], [0, 1, 0]);
+  glow(2.5, 0.8, k.rim * 0.6, [0, 1.6, 6.5], [0, 1, 0]);
+  return room;
+}
+
+function scrollStage(o) {
+  const opt = Object.assign({ front: -1, ground: true, exposure: 1, envIntensity: 1, hold: 0.18, damp: 4.2, mobile: 700,
+    key: { pos: [-4, 7, -3], intensity: 1.4, color: 0xffffff }, rim: { pos: [5, 3, 4], intensity: 0.8, color: 0xffffff } }, o);
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const canvas = opt.canvas;
+  const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true, powerPreference: 'high-performance' });
+  renderer.setPixelRatio(Math.min(devicePixelRatio, 1.75));
+  renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  renderer.toneMappingExposure = opt.exposure;
+  const scene = new THREE.Scene();
+  const pmrem = new THREE.PMREMGenerator(renderer);
+  scene.environment = pmrem.fromScene(opt.studio ? studioRoom(opt.studio) : new RoomEnvironment(), 0.02).texture;
+  const camera = new THREE.PerspectiveCamera(30, 1, 0.01, 100);
+  const key = new THREE.DirectionalLight(opt.key.color, opt.key.intensity); key.position.set(...opt.key.pos); scene.add(key);
+  const rim = new THREE.DirectionalLight(opt.rim.color, opt.rim.intensity); rim.position.set(...opt.rim.pos); scene.add(rim);
+  const holder = new THREE.Group(); scene.add(holder);
+  renderer.setClearColor(0x000000, 0);
+  const fx = opt.bloom ? makeBloom(renderer, scene, camera, opt.bloom) : null;
+
+  const ctx = { THREE, scene, camera, renderer, holder, key, rim, anchors: { center: new THREE.Vector3() }, model: null, size: null, pose: { ...BASE_POSE }, opt, ready: null };
+
+  /* ---------- load (base64 text or binary) ---------- */
+  const loader = new GLTFLoader();
+  if (opt.draco) loader.setDRACOLoader(new DRACOLoader().setDecoderPath(opt.draco));
+  ctx.ready = new Promise((resolve, reject) => {
+    const fail = (e) => { console.error(e); document.documentElement.classList.add('stage-error'); reject(e); };
+    const done = (g) => { try { onModel(g); resolve(ctx); } catch (e) { fail(e); } };
+    const prog = (e) => { if (e.total) opt.onProgress?.(e.loaded / e.total); };
+    if (/\.txt$/.test(opt.url)) {
+      new THREE.FileLoader().setResponseType('text').load(opt.url, (txt) => {
+        const bin = atob(txt.trim()); const buf = new Uint8Array(bin.length);
+        for (let i = 0; i < bin.length; i++) buf[i] = bin.charCodeAt(i);
+        loader.parse(buf.buffer, '', done, fail);
+      }, prog, fail);
+    } else loader.load(opt.url, done, prog, fail);
+  });
+
+  function onModel(gltf) {
+    const model = gltf.scene;
+    model.updateMatrixWorld(true);
+    // measured on the vertices: a rotated part's own box can reach well below its real shape (the Chiron stood 13 cm up)
+    const box = new THREE.Box3().setFromObject(model, true);
+    const size = box.getSize(new THREE.Vector3()), c = box.getCenter(new THREE.Vector3());
+    const L = Math.max(size.x, size.y, size.z);
+    const s = 1 / L;
+    const wrap = new THREE.Group();
+    model.position.set(-c.x, opt.ground ? -box.min.y : -c.y, -c.z);
+    wrap.add(model); wrap.scale.setScalar(s); holder.add(wrap);
+    wrap.updateMatrixWorld(true);
+    ctx.model = model; ctx.wrap = wrap; ctx.scale = s;
+    ctx.size = size.clone().multiplyScalar(s);
+    ctx.anchors.center.set(0, opt.ground ? ctx.size.y / 2 : 0, 0);
+    model.traverse((m) => { if (m.isMesh) { m.frustumCulled = true; } });
+    opt.onModel?.(ctx, gltf);
+    if (opt.shadow !== false) addShadow();
+    document.documentElement.classList.add('stage-ready');
+    measure();
+  }
+
+  /* ---------- soft contact shadow ---------- */
+  function addShadow() {
+    const { x: w, z: l } = ctx.size;
+    const c = document.createElement('canvas'); c.width = 256; c.height = 512; const g = c.getContext('2d');
+    // soft shapes drawn through a shadow (canvas filters are missing on some browsers)
+    const soft = (blur, draw) => { g.save(); g.shadowColor = 'rgba(0,0,0,.5)'; g.shadowBlur = blur; g.shadowOffsetX = 10000; g.translate(-10000, 0); g.fillStyle = '#000'; g.beginPath(); draw(); g.fill(); g.restore(); };
+    soft(26, () => g.roundRect(56, 52, 144, 408, 70));
+    for (const a of ctx.wheels || []) { const u = 128 + a.x / w * 175, v = 256 + a.z / l * 440; soft(12, () => g.ellipse(u, v, 20, 46, 0, 0, Math.PI * 2)); }
+    const mat = new THREE.MeshBasicMaterial({ map: new THREE.CanvasTexture(c), transparent: true, depthWrite: false, toneMapped: false });
+    const plane = new THREE.Mesh(new THREE.PlaneGeometry(w * 1.45, l * 1.14), mat);
+    plane.rotation.x = -Math.PI / 2; plane.position.y = opt.ground ? 0.001 : -ctx.size.y / 2 - 0.02; plane.renderOrder = 1;
+    holder.add(plane); ctx.shadow = plane;
+  }
+
+  /* ---------- stops ---------- */
+  let stops = [];
+  const isMobile = () => innerWidth < opt.mobile;
+  function parse(el) {
+    try {
+      const p = JSON.parse(el.dataset.pose || '{}');
+      if (isMobile() && el.dataset.poseM) Object.assign(p, JSON.parse(el.dataset.poseM));
+      return p;
+    } catch (e) { console.warn('bad pose', el, e); return {}; }
+  }
+  function measure() {
+    const els = [...document.querySelectorAll('[data-pose]')];
+    let prev = { ...BASE_POSE, ...(opt.basePose || {}) };
+    stops = els.map((el) => {
+      const r = el.getBoundingClientRect();
+      const anchor = parseFloat(el.dataset.anchor || '0.5');
+      const y = r.top + scrollY + r.height * anchor - innerHeight / 2;
+      const p = { ...prev, ...parse(el) }; prev = p; // a stop inherits whatever it does not set
+      return { el, y, p };
+    }).sort((a, b) => a.y - b.y);
+  }
+  new ResizeObserver(() => { resize(); measure(); }).observe(document.body);
+  addEventListener('load', measure);
+  document.fonts?.ready.then(measure);
+
+  /* ---------- target pose for the current scroll ---------- */
+  const smooth = (t) => t * t * (3 - 2 * t);
+  function targetPose() {
+    const y = scrollY;
+    if (!stops.length) return { ...BASE_POSE };
+    if (y <= stops[0].y) return stops[0].p;
+    const last = stops[stops.length - 1];
+    if (y >= last.y) return last.p;
+    let k = 0; while (k < stops.length - 1 && stops[k + 1].y <= y) k++;
+    const a = stops[k], b = stops[k + 1];
+    const t = (y - a.y) / Math.max(1, b.y - a.y);
+    const h = opt.hold, e = smooth(Math.min(Math.max((t - h) / (1 - 2 * h), 0), 1));
+    const out = { at: e < 0.5 ? a.p.at : b.p.at, _a: a.p.at, _b: b.p.at, _e: e };
+    for (const k2 of POSE_KEYS) out[k2] = a.p[k2] + (b.p[k2] - a.p[k2]) * e;
+    ctx.stopIndex = e < 0.5 ? k : k + 1; ctx.stopT = k + e;
+    return out;
+  }
+
+  /* ---------- camera ---------- */
+  const cur = { ...BASE_POSE }, curAt = new THREE.Vector3(), tmpA = new THREE.Vector3(), tmpB = new THREE.Vector3();
+  let first = true;
+  const pointer = { x: 0, y: 0, tx: 0, ty: 0 };
+  addEventListener('pointermove', (e) => { if (e.pointerType === 'mouse') { pointer.tx = e.clientX / innerWidth * 2 - 1; pointer.ty = e.clientY / innerHeight * 2 - 1; } }, { passive: true });
+  let lastY = scrollY, vel = 0;
+  function anchorPoint(name, out) { const a = ctx.anchors[name] || ctx.anchors.center; return out.copy(a); }
+
+  function resize() {
+    const w = innerWidth, h = innerHeight;
+    renderer.setSize(w, h, false); camera.aspect = w / h; fx?.composer.setSize(w, h);
+  }
+  resize();
+
+  const clock = new THREE.Clock();
+  let time = 0;
+  function frame() {
+    requestAnimationFrame(frame);
+    const dt = Math.min(clock.getDelta(), 0.05); time += dt;
+    const tp = targetPose();
+    const k = (first || window.__stageSnap) ? 1 : 1 - Math.exp(-dt * (reduce ? 12 : opt.damp));
+    for (const key2 of POSE_KEYS) cur[key2] += (tp[key2] - cur[key2]) * k;
+    // the look-at point blends between the two stops' anchors
+    anchorPoint(tp._a ?? tp.at, tmpA); anchorPoint(tp._b ?? tp.at, tmpB);
+    tmpA.lerp(tmpB, tp._e ?? 0);
+    curAt.lerp(tmpA, k); if (first || window.__stageSnap) curAt.copy(tmpA);
+    first = !ctx.model;
+
+    vel += ((scrollY - lastY) / Math.max(dt, 1e-3) - vel) * 0.1; lastY = scrollY;
+    pointer.x += (pointer.tx - pointer.x) * 0.05; pointer.y += (pointer.ty - pointer.y) * 0.05;
+    const drift = reduce ? 0 : cur.drift;
+    const yaw = cur.yaw + Math.sin(time * 0.31) * 1.6 * drift + pointer.x * 5 * drift + THREE.MathUtils.clamp(vel * 0.004, -4, 4) * drift;
+    const pitch = cur.pitch + Math.sin(time * 0.23) * 0.7 * drift - pointer.y * 2.5 * drift;
+    const F = new THREE.Vector3(0, 0, opt.front);
+    const dir = F.applyAxisAngle(new THREE.Vector3(0, 1, 0), yaw * DEG);
+    const tgt = curAt.clone().add(new THREE.Vector3(cur.tx, cur.ty, cur.tz));
+    const cp = Math.cos(pitch * DEG), sp = Math.sin(pitch * DEG);
+    camera.position.set(tgt.x + dir.x * cp * cur.dist, tgt.y + sp * cur.dist, tgt.z + dir.z * cp * cur.dist);
+    camera.up.set(0, 1, 0); camera.lookAt(tgt);
+    if (cur.roll) camera.rotateZ(cur.roll * DEG);
+    camera.fov = cur.fov;
+    const W = innerWidth, H = innerHeight;
+    camera.setViewOffset(W, H, -cur.sx * W, cur.sy * H, W, H);
+    camera.updateProjectionMatrix();
+    scene.environmentIntensity = opt.envIntensity * cur.env;
+    key.intensity = opt.key.intensity * (0.15 + 0.85 * cur.env); rim.intensity = opt.rim.intensity * (0.3 + 0.7 * cur.env);
+    if (ctx.shadow) ctx.shadow.material.opacity = cur.shadow;
+    opt.onFrame?.(ctx, cur, dt, time);
+    if (fx) fx.composer.render(dt); else renderer.render(scene, camera);
+  }
+  frame();
+  ctx.measure = measure; ctx.fx = fx;
+  ctx.loadModel = (url) => /\.glb$/.test(url) ? new Promise((res, rej) => loader.load(url, (g) => res(g.scene), undefined, rej)) : new Promise((res, rej) => new THREE.FileLoader().setResponseType('text').load(url, (txt) => {
+    const bin = atob(txt.trim()); const buf = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) buf[i] = bin.charCodeAt(i);
+    loader.parse(buf.buffer, '', (g) => res(g.scene), rej);
+  }, undefined, rej));
+  return ctx;
+}
+
+// Scale a word so it fills its container's content width (optionally capped by a share of the viewport height).
+function fitWord(el, maxVh) {
+  const fit = () => { const p = el.parentElement, cs = getComputedStyle(p);
+    el.style.fontSize = '100px';
+    const avail = p.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
+    let fs = 100 * avail / el.scrollWidth;
+    if (maxVh) fs = Math.min(fs, innerHeight * maxVh);
+    el.style.fontSize = fs + 'px'; };
+  fit(); document.fonts?.ready.then(fit); new ResizeObserver(fit).observe(el.parentElement); el._fit = fit;
+}
+
+// Reveal: elements with .rv rise and fade in when they enter the viewport (visible at rest if observers are unavailable).
+function reveals() {
+  const els = document.querySelectorAll('.rv');
+  if (!('IntersectionObserver' in window) || matchMedia('(prefers-reduced-motion: reduce)').matches) { els.forEach(e => e.classList.add('in')); return; }
+  document.documentElement.classList.add('rv-on');
+  const io = new IntersectionObserver((es) => es.forEach(e => { if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); } }), { rootMargin: '0px 0px -8% 0px' });
+  els.forEach(e => io.observe(e));
+}
+
+
+(() => { const c = document.createElement('canvas'); c.width = c.height = 160; const g = c.getContext('2d'); const d = g.createImageData(160, 160);
+  for (let i = 0; i < d.data.length; i += 4) { const v = 200 + Math.random() * 55; d.data[i] = d.data[i + 1] = d.data[i + 2] = v; d.data[i + 3] = 255; }
+  g.putImageData(d, 0, 0); document.body.style.setProperty('--grain', `url(${c.toDataURL()})`); })();
+reveals();
+fitWord(document.getElementById('word'));
+fitWord(document.getElementById('greek'));
+{ const f = new Intl.DateTimeFormat('en-US', { hour: 'numeric', minute: '2-digit', timeZone: 'Europe/Athens' }); const el = document.getElementById('clock'); const t = () => el.textContent = f.format(new Date()); t(); setInterval(t, 15000); }
+
+/* ---------- the awakening ---------- */
+const AW = { uAwake: { value: 0 }, uEyes: { value: 0 }, uTime: { value: 0 }, uEyeL: { value: null }, uEyeR: { value: null } };
+const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const R = { awake: 0, eyes: 0, flash: 0, shake: 0, open: false, at: 0 };
+function tex(draw, w = 256, h = 256) { const c = document.createElement('canvas'); c.width = w; c.height = h; draw(c.getContext('2d'), w, h); return c; }
+
+function buildRig(ctx) {
+  const { THREE } = ctx;
+  // the eyes on the scan, found from its depth map (stage units: x right, y up from the base, z toward the face)
+  AW.uEyeL.value = new THREE.Vector3(-0.079, 0.671, 0.218);
+  AW.uEyeR.value = new THREE.Vector3(0.071, 0.671, 0.218);
+  const add = (o) => { ctx.holder.add(o); o.visible = false; R.parts.push(o); return o; };
+  R.parts = [];
+  const additive = (map, opacity = 1) => new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(map), blending: THREE.AdditiveBlending, depthWrite: false, transparent: true, opacity });
+  const glowC = tex((g, w) => { const r = g.createRadialGradient(w / 2, w / 2, 0, w / 2, w / 2, w / 2); r.addColorStop(0, 'rgba(255,250,235,1)'); r.addColorStop(.18, 'rgba(255,220,150,.7)'); r.addColorStop(.5, 'rgba(255,170,70,.18)'); r.addColorStop(1, 'rgba(0,0,0,0)'); g.fillStyle = r; g.fillRect(0, 0, w, w); });
+  const streakC = tex((g, w, h) => { const r = g.createLinearGradient(0, 0, w, 0); r.addColorStop(0, 'rgba(0,0,0,0)'); r.addColorStop(.5, 'rgba(255,236,190,1)'); r.addColorStop(1, 'rgba(0,0,0,0)'); g.fillStyle = r; g.fillRect(0, h * .42, w, h * .16); }, 512, 64);
+  R.eyeFx = [AW.uEyeL.value, AW.uEyeR.value].map((e) => {
+    const glow = add(new THREE.Sprite(additive(glowC))); glow.position.copy(e).add(new THREE.Vector3(0, 0, 0.03));
+    const streak = add(new THREE.Sprite(additive(streakC))); streak.position.copy(glow.position);
+    return { glow, streak };
+  });
+  // rays fanning out behind the head
+  const raysC = tex((g, w) => {
+    const c = w / 2; const r = g.createRadialGradient(c, c, 0, c, c, c); r.addColorStop(0, 'rgba(255,214,140,.9)'); r.addColorStop(.25, 'rgba(255,190,100,.28)'); r.addColorStop(1, 'rgba(0,0,0,0)');
+    g.fillStyle = r; g.fillRect(0, 0, w, w);
+    g.globalCompositeOperation = 'lighter';
+    for (let i = 0; i < 64; i++) { const a = i / 64 * Math.PI * 2 + Math.random() * .05, len = c * (0.55 + Math.random() * .45), wd = 0.006 + Math.random() * 0.02;
+      g.fillStyle = `rgba(255,${190 + Math.random() * 50 | 0},120,${0.05 + Math.random() * .12})`; g.beginPath(); g.moveTo(c, c);
+      g.lineTo(c + Math.cos(a - wd) * len, c + Math.sin(a - wd) * len); g.lineTo(c + Math.cos(a + wd) * len, c + Math.sin(a + wd) * len); g.closePath(); g.fill(); }
+  }, 1024, 1024);
+  R.rays = add(new THREE.Sprite(additive(raysC))); R.rays.position.set(0, 0.69, -0.12);
+  // a halo of rings and Greek letters
+  const haloC = tex((g, w) => {
+    const c = w / 2; g.strokeStyle = 'rgba(255,214,140,1)'; g.fillStyle = 'rgba(255,214,140,1)';
+    const ring = (r, lw) => { g.lineWidth = lw; g.beginPath(); g.arc(c, c, r, 0, Math.PI * 2); g.stroke(); };
+    ring(c * .94, 3); ring(c * .9, 1.2); ring(c * .7, 2); ring(c * .66, 1);
+    for (let i = 0; i < 120; i++) { const a = i / 120 * Math.PI * 2, l = i % 10 === 0 ? .05 : .02; g.lineWidth = i % 10 === 0 ? 2 : 1;
+      g.beginPath(); g.moveTo(c + Math.cos(a) * c * .9, c + Math.sin(a) * c * .9); g.lineTo(c + Math.cos(a) * c * (.9 - l), c + Math.sin(a) * c * (.9 - l)); g.stroke(); }
+    const letters = 'ΑΒΓΔΕΖΗΘΙΚΛΜΝΞΟΠΡΣΤΥΦΧΨΩ'; g.font = `${w * .034}px serif`; g.textAlign = 'center'; g.textBaseline = 'middle';
+    for (let i = 0; i < letters.length; i++) { const a = i / letters.length * Math.PI * 2; g.save(); g.translate(c + Math.cos(a) * c * .78, c + Math.sin(a) * c * .78); g.rotate(a + Math.PI / 2); g.fillText(letters[i], 0, 0); g.restore(); }
+  }, 1024, 1024);
+  const haloMat = new THREE.MeshBasicMaterial({ map: new THREE.CanvasTexture(haloC), transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide, toneMapped: false });
+  R.halo = add(new THREE.Mesh(new THREE.PlaneGeometry(0.82, 0.82), haloMat)); R.halo.position.set(0, 0.7, -0.16);
+  R.halo2 = add(new THREE.Mesh(new THREE.RingGeometry(0.47, 0.474, 160), new THREE.MeshBasicMaterial({ color: 0xffd38a, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide, toneMapped: false })));
+  R.halo2.position.set(0, 0.7, -0.2);
+  // gold dust lifting off
+  const N = 1100, pos = new Float32Array(N * 3), spd = new Float32Array(N);
+  for (let i = 0; i < N; i++) { const a = Math.random() * Math.PI * 2, r = 0.08 + Math.random() * 0.5; pos.set([Math.cos(a) * r, Math.random() * 1.25, Math.sin(a) * r * 0.7], i * 3); spd[i] = 0.02 + Math.random() * 0.07; }
+  const geo = new THREE.BufferGeometry(); geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+  const dot = tex((g, w) => { const r = g.createRadialGradient(w / 2, w / 2, 0, w / 2, w / 2, w / 2); r.addColorStop(0, 'rgba(255,240,200,1)'); r.addColorStop(1, 'rgba(255,190,90,0)'); g.fillStyle = r; g.fillRect(0, 0, w, w); }, 64, 64);
+  R.dust = add(new THREE.Points(geo, new THREE.PointsMaterial({ size: 0.012, map: new THREE.CanvasTexture(dot), transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, color: 0xffcf7a, toneMapped: false })));
+  R.dustSpd = spd;
+  // a warm light from below, as if from the stone itself
+  R.under = new THREE.PointLight(0xffb45a, 0, 3, 1.5); R.under.position.set(0, 0.3, 0.45); ctx.holder.add(R.under);
+}
+
+const awakeEl = document.getElementById('awake'), flashEl = document.getElementById('flash'), root = document.documentElement;
+function awaken(ctx, dt, t) {
+  if (!R.parts) return;
+  const top = awakeEl.getBoundingClientRect().top;
+  const open = top < innerHeight * 0.18;                 // the moment the section reaches the top of the screen
+  if (open !== R.open) { R.open = open; R.at = t; if (open) { R.flash = 1; R.shake = 1; sound(true); } else sound(false); root.classList.toggle('woke', open); }
+  const since = t - R.at;
+  R.awake += ((open ? 1 : 0) - R.awake) * Math.min(1, dt * (open ? 9 : 5));
+  const eyesTarget = open && since > 0.12 ? 1 : 0;
+  R.eyes += (eyesTarget - R.eyes) * Math.min(1, dt * (open ? 7 : 10));
+  R.flash = Math.max(0, R.flash - dt * 1.6); R.shake = Math.max(0, R.shake - dt * 1.2);
+  const a = R.awake, e = R.eyes;
+  AW.uAwake.value = a; AW.uEyes.value = e; AW.uTime.value = t;
+  flashEl.style.opacity = (R.flash * R.flash * 0.85).toFixed(3);
+  for (const o of R.parts) o.visible = a > 0.01;
+  ctx.scene.environmentIntensity *= 1 - 0.88 * a;
+  ctx.key.intensity *= 1 - 0.85 * a; ctx.rim.intensity *= 1 - 0.5 * a;
+  R.under.intensity = a * 0.9;
+  for (const { glow, streak } of R.eyeFx) {
+    glow.material.opacity = e * a; glow.scale.setScalar(0.05 + 0.2 * e + 0.05 * Math.sin(t * 7));
+    streak.material.opacity = e * a * 0.8; streak.scale.set(0.9 * e, 0.06, 1);
+  }
+  R.rays.material.opacity = a * 0.85; R.rays.scale.setScalar(1.5 + 0.25 * Math.sin(t * 0.7)); R.rays.material.rotation = t * 0.04;
+  R.halo.material.opacity = a * 0.75; R.halo.rotation.z = t * 0.08; R.halo.scale.setScalar(0.9 + 0.1 * a);
+  R.halo2.material.opacity = a * 0.6; R.halo2.rotation.z = -t * 0.05;
+  R.halo.position.y = R.halo2.position.y = R.rays.position.y = 0.7 + a * 0.03;
+  if (a > 0.01) {
+    const p = R.dust.geometry.attributes.position;
+    for (let i = 0; i < p.count; i++) { let y = p.getY(i) + R.dustSpd[i] * dt * (reduceMotion ? 0.2 : 1); if (y > 1.3) y = 0; p.setY(i, y); }
+    p.needsUpdate = true; R.dust.material.opacity = a;
+  }
+  ctx.wrap.position.y = a * (0.022 + (reduceMotion ? 0 : 0.006 * Math.sin(t * 1.3)));
+  if (R.shake > 0 && !reduceMotion) { const k = R.shake * R.shake * 0.006; ctx.camera.position.x += (Math.random() - 0.5) * k; ctx.camera.position.y += (Math.random() - 0.5) * k; }
+  root.classList.toggle('is-dark', a > 0.5);
+}
+
+/* a low drone and a struck chime, only if the visitor turned sound on */
+let ac = null, drone = null, soundOn = false;
+const sndBtn = document.getElementById('snd');
+sndBtn.addEventListener('click', () => {
+  soundOn = !soundOn; sndBtn.setAttribute('aria-pressed', soundOn); sndBtn.textContent = 'Sound: ' + (soundOn ? 'on' : 'off');
+  if (soundOn && !ac) { const AC = window.AudioContext || window.webkitAudioContext; if (AC) ac = new AC(); }
+  ac?.resume?.(); if (!soundOn) sound(false); else if (R.open) sound(true);
+});
+function sound(on) {
+  if (!ac || !soundOn) { if (!on && drone) { drone.g.gain.setTargetAtTime(0, ac.currentTime, 0.4); } return; }
+  const now = ac.currentTime;
+  if (on) {
+    if (!drone) {
+      const g = ac.createGain(); g.gain.value = 0; const lp = ac.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 420; lp.connect(g); g.connect(ac.destination);
+      const os = [55, 82.4, 110.3, 164.8].map((f, i) => { const o = ac.createOscillator(); o.type = i ? 'sine' : 'sawtooth'; o.frequency.value = f; const v = ac.createGain(); v.gain.value = [0.18, 0.3, 0.16, 0.08][i]; o.connect(v); v.connect(lp); o.start(); return o; });
+      drone = { g, os };
+    }
+    drone.g.gain.setTargetAtTime(0.22, now, 0.6);
+    [523.3, 784, 1046.5, 1568, 2093].forEach((f, i) => { const o = ac.createOscillator(); o.type = 'sine'; o.frequency.value = f; const v = ac.createGain(); v.gain.setValueAtTime(0, now); v.gain.linearRampToValueAtTime(0.12 / (i + 1), now + 0.01); v.gain.exponentialRampToValueAtTime(0.0001, now + 4 + i); o.connect(v); v.connect(ac.destination); o.start(now); o.stop(now + 6 + i); });
+  } else if (drone) drone.g.gain.setTargetAtTime(0, now, 0.4);
+}
+
+scrollStage({
+  canvas: document.getElementById('stage'), url: 'model.glb', front: 1, ground: true, exposure: 0.95, envIntensity: 0.16, bloom: { strength: 0.75, radius: 0.6, threshold: 0.95 },
+  key: { pos: [-5, 3.5, 2.5], intensity: 3.2, color: 0xfff3e4 }, rim: { pos: [4, 1.5, -3], intensity: 1.6, color: 0xdfe6f0 },
+  onProgress: (p) => { document.getElementById('load').textContent = 'Quarrying ' + Math.round(p * 100) + '%'; },
+  onModel: (ctx) => {
+    const { THREE, size } = ctx;
+    ctx.anchors.face = new THREE.Vector3(0, size.y * 0.74, size.z * 0.18);
+    const normal = new THREE.TextureLoader().load('normal.jpg');
+    const marble = new THREE.MeshPhysicalMaterial({ color: 0xd8d4cc, roughness: 0.42, normalMap: normal, normalScale: new THREE.Vector2(0.9, 0.9), sheen: 0.4, sheenRoughness: 0.8, sheenColor: 0xfff6ea, clearcoat: 0.15, clearcoatRoughness: 0.5 });
+    marble.onBeforeCompile = (s) => {
+      Object.assign(s.uniforms, AW);
+      s.vertexShader = s.vertexShader.replace('#include <common>', '#include <common>\nvarying vec3 vObj; varying vec3 vW;').replace('#include <begin_vertex>', '#include <begin_vertex>\nvObj = position; vW = (modelMatrix * vec4(transformed, 1.0)).xyz;');
+      s.fragmentShader = s.fragmentShader.replace('#include <common>', `#include <common>
+varying vec3 vObj; varying vec3 vW;
+uniform float uAwake; uniform float uEyes; uniform float uTime; uniform vec3 uEyeL; uniform vec3 uEyeR;
+float h3(vec3 p){ p = fract(p*0.3183099+.1); p*=17.0; return fract(p.x*p.y*p.z*(p.x+p.y+p.z)); }
+float n3(vec3 x){ vec3 i=floor(x); vec3 f=fract(x); f=f*f*(3.0-2.0*f);
+  return mix(mix(mix(h3(i),h3(i+vec3(1,0,0)),f.x),mix(h3(i+vec3(0,1,0)),h3(i+vec3(1,1,0)),f.x),f.y),
+             mix(mix(h3(i+vec3(0,0,1)),h3(i+vec3(1,0,1)),f.x),mix(h3(i+vec3(0,1,1)),h3(i+vec3(1,1,1)),f.x),f.y),f.z); }
+float fbm(vec3 p){ float a=.5,s=0.; for(int i=0;i<5;i++){ s+=a*n3(p); p*=2.03; a*=.5;} return s; }`)
+      .replace('#include <color_fragment>', `#include <color_fragment>
+  vec3 q = vObj * 0.9;
+  vec3 w = q + vec3(fbm(q*1.3), fbm(q*1.3+7.7), fbm(q*1.3+3.3))*1.6;
+  float line = abs(sin(w.x*1.4 + w.y*2.1 + fbm(w*2.2)*5.0));
+  float vein = 1.0 - smoothstep(0.0, 0.05, line);
+  float halo = 1.0 - smoothstep(0.0, 0.35, line);
+  float mask = smoothstep(0.45, 0.7, fbm(q*0.9+11.0));
+  float cloud = fbm(q*3.2 + 3.1);
+  vec3 base = vec3(0.95,0.93,0.89) * (0.94 + 0.1*cloud);
+  base = mix(base, vec3(0.78,0.77,0.76), halo*mask*0.5);
+  base = mix(base, vec3(0.55,0.55,0.56), vein*mask*0.75);
+  diffuseColor.rgb *= base;
+  diffuseColor.rgb *= mix(1.0, 0.16, uAwake);`)
+      .replace('#include <emissivemap_fragment>', `#include <emissivemap_fragment>
+  float pulse = 0.62 + 0.38 * sin(uTime * 2.1 + w.y * 9.0 + w.x * 5.0);
+  vec3 gold = vec3(1.0, 0.66, 0.2);
+  totalEmissiveRadiance += gold * (vein * 3.4 + halo * 0.45) * mask * uAwake * pulse;
+  totalEmissiveRadiance += gold * 0.9 * uAwake * (1.0 - smoothstep(0.0, 0.012, line)) * (0.3 + 0.7 * pulse);
+  for (int k = 0; k < 2; k++) {
+    vec3 E = k == 0 ? uEyeL : uEyeR;
+    vec3 d = vW - E;
+    float u = d.x / 0.036;
+    float v = d.y / (0.0025 + 0.0175 * uEyes);
+    float almond = u * u + v * v * (1.0 + 0.6 * u * u);
+    float inside = (1.0 - smoothstep(0.5, 1.0, almond)) * step(-0.035, d.z);
+    float core = (1.0 - smoothstep(0.0, 0.28, u * u * 2.2 + v * v)) * step(-0.035, d.z);
+    totalEmissiveRadiance += (vec3(1.0, 0.82, 0.48) * inside * 7.0 + vec3(1.0, 0.97, 0.9) * core * 14.0) * smoothstep(0.0, 0.25, uEyes) * uAwake;
+  }`);
+    };
+    ctx.model.traverse((m) => { if (m.isMesh) m.material = marble; });
+    buildRig(ctx);
+  },
+  onFrame: (ctx, pose, dt, t) => awaken(ctx, dt, t),
+});
+</script>
+
+</body>
+</html>
